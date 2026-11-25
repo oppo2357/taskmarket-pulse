@@ -1,0 +1,55 @@
+name: Refresh Data & Deploy Pages
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-deploy"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch live Taskmarket snapshot (Tempo 4217 + Base 8453)
+        run: node scripts/fetch-snapshot.mjs
+
+      - name: Refresh live Open Graph share image (1200x630)
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 scripts/generate-og.py
+
+      - name: Verify snapshot integrity & rules tests
+        run: node --test tests/snapshot.test.mjs
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

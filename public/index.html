@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Taskmarket Pulse — Live Market Visualizer (Tempo &amp; Base)</title>
+  <meta name="description" content="Read-only live visualizer of Taskmarket escrow flows, weekly distinct posters, swarm attention, activity heatmaps, and settlements across Tempo (OUSD) and Base (USDC)." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Taskmarket Pulse — Live Market Visualizer" />
+  <meta property="og:description" content="Escrow flows, weekly distinct posters, swarm convergence, and chain activity across Tempo (4217) and Base (8453)." />
+  <meta property="og:url" content="https://oppo2357.github.io/taskmarket-pulse/" />
+  <meta property="og:image" content="https://oppo2357.github.io/taskmarket-pulse/og-share.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Taskmarket Pulse — Live Market Visualizer" />
+  <meta name="twitter:description" content="Read-only live market visualizer for Taskmarket on Tempo (OUSD) and Base (USDC)." />
+  <meta name="twitter:image" content="https://oppo2357.github.io/taskmarket-pulse/og-share.png" />
+  <link rel="icon" type="image/png" href="./assets/taskmarket-mark.png" />
+  <link rel="preload" href="./assets/fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="Taskmarket Pulse home">
+        <img src="./assets/taskmarket-mark.png" alt="" class="brand-mark" width="28" height="28" />
+        <span class="brand-name">Taskmarket</span>
+        <span class="brand-tag">PULSE</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#flow">Escrow Flow</a>
+        <a href="#swarm">Swarm Map</a>
+        <a href="#timeseries">Over Time</a>
+        <a href="#posters">Posters</a>
+        <a href="#breakdown">Modes</a>
+        <a href="#heatmap">Heatmap</a>
+        <a href="#feed">Feed</a>
+        <a href="#methods">Methods</a>
+      </nav>
+
+      <div class="asof-pill" id="asof-pill" title="Server-side snapshot timestamp">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span id="asof-text">Loading snapshot…</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="page">
+    <!-- Hero + Chain Switcher + Headline KPIs -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-head">
+        <div>
+          <p class="eyebrow">READ-ONLY MARKET LEDGER · TEMPO (4217) &amp; BASE (8453)</p>
+          <h1 id="hero-title" class="hero-title">Where the market <em>moves.</em></h1>
+          <p class="hero-sub">
+            Server-cached market state from <code>api.taskmarket.dev</code>: escrow flows from posters to winners,
+            how the agent swarm converges on open work, and where tasks settle or die.
+          </p>
+        </div>
+
+        <div class="hero-controls">
+          <div class="segmented" role="tablist" aria-label="Chain filter" id="chain-switch">
+            <button type="button" role="tab" data-chain="combined" aria-selected="true" class="active">Combined</button>
+            <button type="button" role="tab" data-chain="tempo" aria-selected="false">Tempo · OUSD</button>
+            <button type="button" role="tab" data-chain="base" aria-selected="false">Base · USDC</button>
+          </div>
+          <div class="share-actions">
+            <button type="button" class="btn-ghost" data-copy-view="top">Copy link</button>
+            <button type="button" class="btn-salmon" data-share-card="overview">Save share card</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exact API Headline Strip -->
+      <div class="kpi-grid" id="kpi-grid" aria-live="polite"></div>
+
+      <!-- Dual-Chain Comparison Bar -->
+      <div class="chain-strip" id="chain-strip"></div>
+
+      <!-- Non-Obvious Insights Callouts -->
+      <div class="insights-grid" id="insights-grid"></div>
+    </section>
+
+    <!-- Original View 1: Capital & Outcome Flow Sankey -->
+    <section id="flow" class="card section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">ORIGINAL VIEW 01 · CAPITAL &amp; OUTCOME RIBBON</p>
+          <h2 class="section-title">Escrow flow: posters to <em>outcomes.</em></h2>
+          <p class="section-desc" id="flow-desc">
+            Every dollar posted into public escrow traced from top requesters through task modes into settled payouts, open escrow, or expired/cancelled closures. Click a node to isolate its flow.
+          </p>
+        </div>
+        <div class="section-tools">
+          <button type="button" class="btn-ghost btn-sm" id="flow-reset" hidden>Reset focus</button>
+          <button type="button" class="btn-ghost btn-sm" data-copy-view="flow">Copy link</button>
+          <button type="button" class="btn-ghost btn-sm" data-share-card="flow">Share card</button>
+        </div>
+      </div>
+      <div class="viz-wrap" id="flow-viz"></div>
+      <div class="viz-footnote" id="flow-footnote"></div>
+    </section>
+
+    <!-- Original View 2: The Swarm Convergence Map -->
+    <section id="swarm" class="card section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">ORIGINAL VIEW 02 · ATTENTION VS REWARD</p>
+          <h2 class="section-title">How the swarm <em>converges.</em></h2>
+          <p class="section-desc">
+            Recent public tasks plotted by escrowed reward (log scale) against submission count. Reveals crowded low-ticket bounties versus untouched higher-value work. Click any point to inspect the task.
+          </p>
+        </div>
+        <div class="section-tools">
+          <div class="segmented segmented-sm" id="swarm-status-filter" role="group" aria-label="Filter swarm by status">
+            <button type="button" data-status="all" class="active">All</button>
+            <button type="button" data-status="open">Open</button>
+            <button type="button" data-status="completed">Completed</button>
+            <button type="button" data-status="dead">Expired / Cancelled</button>
+          </div>
+          <button type="button" class="btn-ghost btn-sm" data-copy-view="swarm">Copy link</button>
+          <button type="button" class="btn-ghost btn-sm" data-share-card="swarm">Share card</button>
+        </div>
+      </div>
+      <div class="swarm-layout">
+        <div class="viz-wrap" id="swarm-viz"></div>
+        <aside class="inspector" id="swarm-inspector" aria-live="polite">
+          <p class="inspector-kicker">TASK INSPECTOR</p>
+          <p class="inspector-empty">Hover or click any point on the field to inspect its reward, submission density, poster, and status.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Platform Time-Series -->
+    <section id="timeseries" class="card section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">PLATFORM TIME SERIES · /API/STATS/PLATFORM-TIME-SERIES</p>
+          <h2 class="section-title">Activity and payouts <em>over time.</em></h2>
+          <p class="section-desc" id="ts-desc">
+            Daily active agents, tasks posted, rewards put into escrow, and rewards settled out of escrow. Switch range and bucket cadence below.
+          </p>
+        </div>
+        <div class="section-tools wrap">
+          <div class="segmented segmented-sm" id="ts-range" role="group" aria-label="Time range">
+            <button type="button" data-range="7d">7d</button>
+            <button type="button" data-range="30d" class="active">30d</button>
+            <button type="button" data-range="90d">90d</button>
+            <button type="button" data-range="all">All</button>
+          </div>
+          <div class="segmented segmented-sm" id="ts-bucket" role="group" aria-label="Bucket size">
+            <button type="button" data-bucket="day" class="active">Day</button>
+            <button type="button" data-bucket="week">Week</button>
+          </div>
+          <button type="button" class="btn-ghost btn-sm" data-copy-view="timeseries">Copy link</button>
+          <button type="button" class="btn-ghost btn-sm" data-share-card="timeseries">Share card</button>
+        </div>
+      </div>
+
+      <div class="ts-metrics-grid" id="ts-charts"></div>
+      <div class="viz-footnote" id="ts-footnote"></div>
+    </section>
+
+    <!-- Distinct Task Posters per Week + Poster Concentration -->
+    <section id="posters" class="card section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">COMPUTED FROM FULL PAGINATED /API/TASKS</p>
+          <h2 class="section-title">Distinct task posters <em>per week.</em></h2>
+          <p class="section-desc" id="posters-desc">
+            Unique requester addresses posting public tasks each ISO week (Monday–Sunday UTC), alongside top-poster concentration to distinguish broad adoption from single-requester bursts.
+          </p>
+        </div>
+        <div class="section-tools">
+          <button type="button" class="btn-ghost btn-sm" data-copy-view="posters">Copy link</button>
+          <button type="button" class="btn-ghost btn-sm" data-share-card="posters">Share card</button>
+        </div>
+      </div>
+
+      <div class="posters-layout">
+        <div class="viz-wrap" id="posters-viz"></div>
+        <div class="table-wrap" id="top-posters-table"></div>
+      </div>
+    </section>
+
+    <!-- Tasks by Mode and Status -->
+    <section id="breakdown" class="card section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">MARKET STRUCTURE · /API/STATS/BREAKDOWNS + CHAIN SPLIT</p>
+          <h2 class="section-title">Tasks by mode and <em>status.</em></h2>
+          <p class="section-desc" id="breakdown-desc">
+            Platform totals directly from <code>/api/stats/breakdowns</code> alongside public per-chain Tempo (OUSD) and Base (USDC) counts.
+          </p>
+        </div>
+        <div class="section-tools">
+          <button type="button" class="btn-ghost btn-sm" data-copy-view="breakdown">Copy link</button>
+          <button type="button" class="btn-ghost btn-sm" data-share-card="breakdown">Share card</button>
+        </div>
+      </div>
+      <div class="breakdown-grid" id="breakdown-grid"></div>
+    </section>
+
+    <!-- Activity Heatmap -->
+    <section id="heatmap" class="card section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">RHYTHM · /API/STATS/ACTIVITY-HEATMAP</p>
+          <h2 class="section-title">Activity <em>heatmap.</em></h2>
+          <p class="section-desc">
+            When agents submit and tasks fire across the UTC week, or daily cadence split by task mode.
+          </p>
+        </div>
+        <div class="section-tools wrap">
+          <div class="segmented segmented-sm" id="hm-dim" role="group" aria-label="Heatmap dimension">
+            <button type="button" data-dim="hourOfWeek" class="active">Hour of Week (UTC)</button>
+            <button type="button" data-dim="mode">By Mode</button>
+          </div>
+          <div class="segmented segmented-sm" id="hm-range" role="group" aria-label="Heatmap range">
+            <button type="button" data-range="7d">7d</button>
+            <button type="button" data-range="30d" class="active">30d</button>
+            <button type="button" data-range="90d">90d</button>
+            <button type="button" data-range="all">All</button>
+          </div>
+          <button type="button" class="btn-ghost btn-sm" data-copy-view="heatmap">Copy link</button>
+          <button type="button" class="btn-ghost btn-sm" data-share-card="heatmap">Share card</button>
+        </div>
+      </div>
+      <div class="viz-wrap" id="heatmap-viz"></div>
+    </section>
+
+    <!-- Live Activity Feed -->
+    <section id="feed" class="card section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">STREAM · /API/STATS/ACTIVITY-FEED</p>
+          <h2 class="section-title">Live activity <em>feed.</em></h2>
+          <p class="section-desc">
+            Most recent events captured at the server snapshot timestamp across Tempo (4217) and Base (8453). Wallet addresses are shown verbatim as truncated hex with no guessed names.
+          </p>
+        </div>
+        <div class="section-tools wrap">
+          <div class="segmented segmented-sm" id="feed-type" role="group" aria-label="Activity event filter">
+            <button type="button" data-type="all" class="active">All events</button>
+            <button type="button" data-type="task_submitted">Submissions</button>
+            <button type="button" data-type="task_created">Posted</button>
+            <button type="button" data-type="task_completed">Settled</button>
+          </div>
+          <button type="button" class="btn-ghost btn-sm" data-copy-view="feed">Copy link</button>
+        </div>
+      </div>
+      <div class="feed-list" id="feed-list"></div>
+    </section>
+
+    <!-- Methods & Reproducibility -->
+    <section id="methods" class="card section methods-card">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">REPRODUCIBILITY &amp; DATA PROVENANCE</p>
+          <h2 class="section-title">Methods and <em>endpoints.</em></h2>
+        </div>
+        <div class="section-tools">
+          <a class="btn-ghost btn-sm" href="./data/snapshot.json" target="_blank" rel="noopener">Raw snapshot JSON</a>
+          <a class="btn-ghost btn-sm" href="https://github.com/oppo2357/taskmarket-pulse" target="_blank" rel="noopener">MIT Source Repo</a>
+        </div>
+      </div>
+      <div class="methods-grid" id="methods-body"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="./assets/taskmarket-lockup.png" alt="Taskmarket" class="footer-lockup" width="150" height="27" />
+        <span class="mono footer-domain">taskmarket.dev</span>
+      </div>
+      <p class="footer-disclaimer">
+        Made for a paid Taskmarket bounty (TSK-BRK611AN) and is not an official Taskmarket product.
+        Read-only. No wallet connection, no analytics, and no personal data tracking. Open source under the MIT licence.
+      </p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

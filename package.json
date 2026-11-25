@@ -1,0 +1,16 @@
+{
+  "name": "taskmarket-pulse",
+  "version": "1.0.0",
+  "description": "Live market visualizer for Taskmarket across Tempo (4217) and Base (8453).",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "refresh": "node scripts/fetch-snapshot.mjs",
+    "build": "node scripts/fetch-snapshot.mjs",
+    "start": "node server.mjs",
+    "test": "node --test tests/snapshot.test.mjs"
+  }
+}
